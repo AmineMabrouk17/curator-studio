@@ -173,6 +173,7 @@ export default function Dashboard({
               alt=""
               width={106}
               height={152}
+              unoptimized
               className="h-7 w-auto dark:hidden"
             />
             <Image
@@ -180,6 +181,7 @@ export default function Dashboard({
               alt=""
               width={173}
               height={168}
+              unoptimized
               className="hidden h-8 w-auto rounded-xl dark:block"
             />
           </span>

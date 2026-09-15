@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://curator-studio.cast-cue.workers.dev"),
   title: {
     default: "CuratorStudio",
     template: "%s · CuratorStudio",

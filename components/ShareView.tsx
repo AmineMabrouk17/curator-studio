@@ -103,6 +103,7 @@ export default function ShareView({ study }: ShareViewProps) {
             alt=""
             width={102}
             height={148}
+            unoptimized
             className="h-5 w-auto"
           />
           <span className="text-sm font-medium">CuratorStudio</span>

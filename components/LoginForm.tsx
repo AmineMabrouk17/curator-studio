@@ -46,6 +46,7 @@ export default function LoginForm() {
           width={768}
           height={303}
           priority
+          unoptimized
           className="h-16 w-auto dark:hidden"
         />
         <Image
@@ -54,6 +55,7 @@ export default function LoginForm() {
           width={768}
           height={303}
           priority
+          unoptimized
           className="hidden h-16 w-auto dark:block"
         />
         <p className="text-sm text-neutral-500 dark:text-neutral-400">

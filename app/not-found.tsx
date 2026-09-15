@@ -9,6 +9,7 @@ export default function NotFound() {
         alt="CuratorStudio"
         width={102}
         height={148}
+        unoptimized
         className="h-12 w-auto"
       />
       <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">

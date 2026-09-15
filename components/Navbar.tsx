@@ -41,6 +41,7 @@ export default function Navbar() {
             width={905}
             height={212}
             priority
+            unoptimized
             className="h-8 w-auto dark:hidden"
           />
           <Image
@@ -49,6 +50,7 @@ export default function Navbar() {
             width={768}
             height={303}
             priority
+            unoptimized
             className="hidden h-8 w-auto dark:block"
           />
         </Link>
