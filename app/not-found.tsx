@@ -1,9 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function NotFound() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
-      <span className="text-5xl">🔍</span>
+      <Image
+        src="/brand/mark-accent.png"
+        alt="CuratorStudio"
+        width={102}
+        height={148}
+        className="h-12 w-auto"
+      />
       <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
         Not found
       </h1>
