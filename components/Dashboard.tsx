@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "boneyard-js/react";
+import Image from "next/image";
 import { Plus, Search, X } from "lucide-react";
 import type { StudyDto } from "@/lib/types";
 import type { Platform } from "@/lib/youtube";
@@ -166,7 +167,22 @@ export default function Dashboard({
       >
         {studies.length === 0 ? (
           <div className="flex flex-col items-center gap-3 pt-10 text-center">
-            <span className="text-4xl">📚</span>
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-900">
+            <Image
+              src="/brand/mark-black.png"
+              alt=""
+              width={106}
+              height={152}
+              className="h-7 w-auto dark:hidden"
+            />
+            <Image
+              src="/brand/mark-white-on-dark.png"
+              alt=""
+              width={173}
+              height={168}
+              className="hidden h-8 w-auto rounded-xl dark:block"
+            />
+          </span>
             <p className="font-medium text-neutral-700 dark:text-neutral-300">
               {hasFilters ? "No studies match your filters" : "No studies yet"}
             </p>

@@ -2,6 +2,8 @@
 
 import { useRef } from "react";
 import type { ElementType } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Link2 } from "lucide-react";
 import { XBrandIcon, YouTubeIcon } from "./brand-icons";
 import type { StudyDto } from "@/lib/types";
@@ -93,6 +95,19 @@ export default function ShareView({ study }: ShareViewProps) {
           </article>
         </div>
       </div>
+
+      <footer className="mt-12 flex items-center justify-center gap-2 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+        <Link href="/" className="flex items-center gap-2 text-neutral-400 transition hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
+          <Image
+            src="/brand/mark-accent.png"
+            alt=""
+            width={102}
+            height={148}
+            className="h-5 w-auto"
+          />
+          <span className="text-sm font-medium">CuratorStudio</span>
+        </Link>
+      </footer>
     </main>
   );
 }

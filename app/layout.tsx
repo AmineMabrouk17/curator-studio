@@ -9,6 +9,16 @@ export const metadata: Metadata = {
   },
   description:
     "A personal video knowledge studio and digital library.",
+  icons: {
+    icon: "/brand/favicon-32.png",
+    shortcut: "/brand/favicon-32.png",
+    apple: "/brand/favicon-32.png",
+  },
+  openGraph: {
+    title: "CuratorStudio",
+    description: "A personal video knowledge studio and digital library.",
+    images: ["/brand/logo-light-panel.png"],
+  },
 };
 
 const themeScript = `

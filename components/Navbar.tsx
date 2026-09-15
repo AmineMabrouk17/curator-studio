@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Library, LogOut, Moon, Sun } from "lucide-react";
+import Image from "next/image";
+import { LogOut, Moon, Sun } from "lucide-react";
 
 function useTheme() {
   const [dark, setDark] = useState(
@@ -33,11 +34,23 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-neutral-100">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-600 text-white">
-            <Library className="h-4 w-4" />
-          </span>
-          CuratorStudio
+        <Link href="/dashboard" className="flex items-center" aria-label="CuratorStudio home">
+          <Image
+            src="/brand/logo-dark-full.png"
+            alt="CuratorStudio"
+            width={905}
+            height={212}
+            priority
+            className="h-8 w-auto dark:hidden"
+          />
+          <Image
+            src="/brand/logo-dark-panel.png"
+            alt="CuratorStudio"
+            width={768}
+            height={303}
+            priority
+            className="hidden h-8 w-auto dark:block"
+          />
         </Link>
 
         <div className="ml-auto flex items-center gap-1">

@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock } from "lucide-react";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -38,13 +39,23 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-4">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 text-white">
-          <Lock className="h-5 w-5" />
-        </span>
-        <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-          CuratorStudio
-        </h1>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Image
+          src="/brand/logo-light-panel.png"
+          alt="CuratorStudio"
+          width={768}
+          height={303}
+          priority
+          className="h-16 w-auto dark:hidden"
+        />
+        <Image
+          src="/brand/logo-dark-panel.png"
+          alt="CuratorStudio"
+          width={768}
+          height={303}
+          priority
+          className="hidden h-16 w-auto dark:block"
+        />
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           This studio is private. Enter your curator password to continue.
         </p>
