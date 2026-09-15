@@ -1,0 +1,5 @@
+# 0001: OpenNext adapter over @cloudflare/next-on-pages
+
+The original spec mandated Next.js 14 + `@cloudflare/next-on-pages` + `runtime = 'edge'` everywhere and a `.vercel/output/static` build dir. next-on-pages was archived in September 2025 and is officially deprecated in favour of the OpenNext Cloudflare adapter (`@opennextjs/cloudflare`).
+
+We deploy on current stable Next.js with the OpenNext Cloudflare adapter. This also drops the deployment target from Pages to Workers: the OpenNext adapter's Pages upload path was removed — `deploy` (and `upload` for gradual rollouts) now targets Cloudflare Workers, and `npm create cloudflare --framework=next` scaffolds straight to Workers. Git-connected CI, preview environments, and rollbacks come from Workers Builds instead of a Pages project. One consequence to keep in mind: Worker size is capped at 3 MiB (compressed) on the free plan, so the bundle needs to stay lean.
