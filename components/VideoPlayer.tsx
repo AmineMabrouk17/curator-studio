@@ -287,7 +287,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                 className="w-full min-h-64 border-0"
                 title="Tweet embed"
                 allow="autoplay; encrypted-media"
-                loading="lazy"
               />
               {tweetUrl && (
                 <a
