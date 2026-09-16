@@ -198,58 +198,93 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       setRetryKey((k) => k + 1);
     };
 
+    const linkOutBox = (
+      retryButton: boolean,
+      className?: string,
+    ) => (
+      <div
+        className={
+          className ??
+          "flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-4 dark:border-neutral-800 dark:bg-neutral-900"
+        }
+      >
+        {tweetUrl && (
+          <a
+            href={tweetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open on X
+          </a>
+        )}
+        {retryButton && (
+          <button
+            type="button"
+            onClick={retry}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Retry
+          </button>
+        )}
+      </div>
+    );
+
+    const ytThumbBox = (retryButton: boolean) => (
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 dark:border-neutral-800">
+        {thumbnailUrl && (
+          <Image
+            src={thumbnailUrl}
+            alt="YouTube thumbnail"
+            fill
+            sizes="100vw"
+            unoptimized
+            className="object-cover"
+          />
+        )}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 p-4">
+          {watchUrl && (
+            <a
+              href={watchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Watch on YouTube
+            </a>
+          )}
+          {retryButton && (
+            <button
+              type="button"
+              onClick={retry}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Retry
+            </button>
+          )}
+        </div>
+      </div>
+    );
+
+    const fallbackContent =
+      platform === "youtube" ? ytThumbBox(false) : linkOutBox(false);
+
     return (
       <Skeleton
         name="video-player"
         loading={asyncLoading}
-        fallback={
-          <div className="flex aspect-video w-full animate-pulse items-center justify-center rounded-xl bg-neutral-200 dark:bg-neutral-800">
-            {platform === "x" ? (
-              <XBrandIcon className="h-10 w-10 text-neutral-400 dark:text-neutral-600" />
-            ) : (
-              <YouTubeIcon className="h-10 w-10 text-neutral-400 dark:text-neutral-600" />
-            )}
-          </div>
-        }
+        fallback={fallbackContent}
         fixture={
           <div className="aspect-video w-full rounded-xl bg-neutral-200 dark:bg-neutral-800" />
         }
       >
         {platform === "youtube" && videoId ? (
           degraded ? (
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 dark:border-neutral-800">
-              {thumbnailUrl && (
-                <Image
-                  src={thumbnailUrl}
-                  alt="YouTube thumbnail"
-                  fill
-                  sizes="100vw"
-                  unoptimized
-                  className="object-cover"
-                />
-              )}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 p-4">
-                {watchUrl && (
-                  <a
-                    href={watchUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Watch on YouTube
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={retry}
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Retry
-                </button>
-              </div>
-            </div>
+            ytThumbBox(true)
           ) : (
             <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
               <div ref={containerRef} className="absolute inset-0 h-full w-full" />
@@ -257,27 +292,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           )
         ) : platform === "x" && videoId ? (
           degraded ? (
-            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-4 dark:border-neutral-800 dark:bg-neutral-900">
-              {tweetUrl && (
-                <a
-                  href={tweetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Open on X
-                </a>
-              )}
-              <button
-                type="button"
-                onClick={retry}
-                className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Retry
-              </button>
-            </div>
+            linkOutBox(true)
           ) : (
             <div className="w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
               <iframe
