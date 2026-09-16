@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ElementType } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +27,9 @@ const PLATFORM_META: Record<
 
 export default function ShareView({ study }: ShareViewProps) {
   const playerRef = useRef<VideoPlayerHandle>(null);
-  const canSeek = study.platform === "youtube" && Boolean(study.videoId);
+  const [degraded, setDegraded] = useState(false);
+  const canSeek =
+    study.platform === "youtube" && Boolean(study.videoId) && !degraded;
   const meta = PLATFORM_META[study.platform];
 
   return (
@@ -72,6 +74,8 @@ export default function ShareView({ study }: ShareViewProps) {
               platform={study.platform}
               videoId={study.videoId}
               videoUrl={study.videoUrl}
+              thumbnailUrl={study.thumbnailUrl}
+              onDegradedChange={setDegraded}
             />
             {canSeek && (
               <p className="mt-2 text-center text-xs text-neutral-400 dark:text-neutral-500">

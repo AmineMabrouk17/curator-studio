@@ -7,7 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link2 } from "lucide-react";
+import { ExternalLink, Link2, RotateCcw } from "lucide-react";
+import Image from "next/image";
 import { Skeleton } from "boneyard-js/react";
 import { getTweetEmbedUrl, type Platform } from "@/lib/youtube";
 import { XBrandIcon, YouTubeIcon } from "./brand-icons";
@@ -17,6 +18,8 @@ export type VideoPlayerHandle = {
   getCurrentTime(): number;
   canSeek: boolean;
 };
+
+const EMBED_TIMEOUT_MS = 8000;
 
 interface YouTubePlayer {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
@@ -68,44 +71,72 @@ interface VideoPlayerProps {
   platform: Platform;
   videoId: string | null;
   videoUrl?: string;
+  thumbnailUrl?: string | null;
   startTime?: number;
   autoplay?: boolean;
   onSeekRequested?: (seconds: number) => void;
+  onDegradedChange?: (degraded: boolean) => void;
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer(
-    { platform, videoId, videoUrl, startTime, autoplay }: VideoPlayerProps,
+    {
+      platform,
+      videoId,
+      videoUrl,
+      thumbnailUrl,
+      startTime,
+      autoplay,
+      onDegradedChange,
+    }: VideoPlayerProps,
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<YouTubePlayer | null>(null);
     const currentTimeRef = useRef(0);
-    const canSeek = platform === "youtube" && Boolean(videoId);
     const [ready, setReady] = useState(false);
+    const [degraded, setDegraded] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
 
-    useEffect(() => {
-      setReady(false);
-    }, [videoId, platform]);
+    const canEmbed =
+      platform === "youtube" && Boolean(videoId);
 
     useImperativeHandle(ref, () => ({
       seekTo(seconds: number) {
-        if (canSeek && playerRef.current?.seekTo) {
+        if (!canEmbed || degraded) return;
+        if (playerRef.current?.seekTo) {
           playerRef.current.seekTo(seconds, true);
           playerRef.current.playVideo?.();
         }
       },
       getCurrentTime() {
-        if (canSeek && playerRef.current?.getCurrentTime) {
+        if (!canEmbed || degraded) return currentTimeRef.current;
+        if (playerRef.current?.getCurrentTime) {
           currentTimeRef.current = playerRef.current.getCurrentTime();
         }
         return currentTimeRef.current;
       },
-      canSeek,
+      canSeek: canEmbed && !degraded,
     }));
 
     useEffect(() => {
-      if (!canSeek || !videoId) return;
+      setReady(false);
+      setDegraded(false);
+    }, [videoId, platform]);
+
+    useEffect(() => {
+      if (canEmbed && !ready && !degraded) {
+        const timer = setTimeout(() => setDegraded(true), EMBED_TIMEOUT_MS);
+        return () => clearTimeout(timer);
+      }
+    }, [canEmbed, ready, degraded]);
+
+    useEffect(() => {
+      onDegradedChange?.(degraded);
+    }, [degraded, onDegradedChange]);
+
+    useEffect(() => {
+      if (!canEmbed || !videoId) return;
       let player: YouTubePlayer | null = null;
       let cancelled = false;
 
@@ -124,6 +155,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             onReady: () => {
               playerRef.current = player;
               setReady(true);
+              setDegraded(false);
               if (startTime && player?.seekTo) {
                 player.seekTo(startTime, true);
               }
@@ -141,11 +173,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
         playerRef.current = null;
       };
-    }, [canSeek, videoId, startTime, autoplay]);
+    }, [canEmbed, videoId, startTime, autoplay, retryKey]);
 
-    const asyncLoading =
-      !ready &&
-      !!((platform === "youtube" && videoId) || (platform === "x" && videoId));
+    const asyncLoading = !ready && !degraded && Boolean(videoId);
+
+    const watchUrl =
+      videoUrl ||
+      (videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined);
+
+    const retry = () => {
+      setDegraded(false);
+      setRetryKey((k) => k + 1);
+    };
 
     return (
       <Skeleton
@@ -165,9 +204,45 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
       >
         {platform === "youtube" && videoId ? (
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
-            <div ref={containerRef} className="absolute inset-0 h-full w-full" />
-          </div>
+          degraded ? (
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 dark:border-neutral-800">
+              {thumbnailUrl && (
+                <Image
+                  src={thumbnailUrl}
+                  alt="YouTube thumbnail"
+                  fill
+                  sizes="100vw"
+                  unoptimized
+                  className="object-cover"
+                />
+              )}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 p-4">
+                {watchUrl && (
+                  <a
+                    href={watchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Watch on YouTube
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={retry}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+              <div ref={containerRef} className="absolute inset-0 h-full w-full" />
+            </div>
+          )
         ) : platform === "x" && videoId ? (
           <div className="w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
             <iframe

@@ -34,6 +34,7 @@ export default function Workspace({ study }: WorkspaceProps) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [copied, setCopied] = useState(false);
   const [view, setView] = useState<ViewMode>("split");
+  const [degraded, setDegraded] = useState(false);
 
   const playerRef = useRef<VideoPlayerHandle>(null);
   const editorRef = useRef<MarkdownEditorHandle>(null);
@@ -44,7 +45,8 @@ export default function Workspace({ study }: WorkspaceProps) {
     latestDraft.current = { title, content, tags, isPublic };
   });
 
-  const canSeek = study.platform === "youtube" && Boolean(study.videoId);
+  const canSeek =
+    study.platform === "youtube" && Boolean(study.videoId) && !degraded;
   const shareUrl = `${window.location.origin}/share/${study.slug}`;
 
   const save = useCallback(async () => {
@@ -168,6 +170,8 @@ export default function Workspace({ study }: WorkspaceProps) {
             platform={study.platform}
             videoId={study.videoId}
             videoUrl={study.videoUrl}
+            thumbnailUrl={study.thumbnailUrl}
+            onDegradedChange={setDegraded}
           />
 
           <div className="flex flex-wrap items-center gap-2">
