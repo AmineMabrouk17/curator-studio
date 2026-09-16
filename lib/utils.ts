@@ -1,14 +1,24 @@
 import { formatTimestamp, parseTimestampToSeconds } from "./youtube";
 
+export const SLUG_MAX_LENGTH = 80;
+
+function truncateAtWordBoundary(slug: string): string {
+  if (slug.length <= SLUG_MAX_LENGTH) return slug;
+  const truncated = slug.slice(0, SLUG_MAX_LENGTH);
+  const lastHyphen = truncated.lastIndexOf("-");
+  return lastHyphen > 0 ? truncated.slice(0, lastHyphen) : truncated;
+}
+
 export function slugify(input: string): string {
-  const slug = input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
-    .slice(0, 80);
+  const slug = truncateAtWordBoundary(
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-"),
+  );
   return slug || "study";
 }
 
