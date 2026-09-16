@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Moon, Sun } from "lucide-react";
+import { persistTheme } from "@/lib/theme";
 
 function useTheme() {
   const [dark, setDark] = useState(
@@ -16,7 +17,7 @@ function useTheme() {
     const next = !dark;
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
+    persistTheme(next);
   };
   return { dark, toggle };
 }
