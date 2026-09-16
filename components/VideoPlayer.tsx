@@ -99,7 +99,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [retryKey, setRetryKey] = useState(0);
 
     const canEmbed =
-      platform === "youtube" && Boolean(videoId);
+      Boolean(videoId) && (platform === "youtube" || platform === "x");
 
     useImperativeHandle(ref, () => ({
       seekTo(seconds: number) {
@@ -116,7 +116,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
         return currentTimeRef.current;
       },
-      canSeek: canEmbed && !degraded,
+      canSeek: platform === "youtube" && canEmbed && !degraded,
     }));
 
     useEffect(() => {
@@ -136,7 +136,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }, [degraded, onDegradedChange]);
 
     useEffect(() => {
-      if (!canEmbed || !videoId) return;
+      if (platform !== "youtube" || !videoId) return;
       let player: YouTubePlayer | null = null;
       let cancelled = false;
 
@@ -180,13 +180,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
         playerRef.current = null;
       };
-    }, [canEmbed, videoId, startTime, autoplay, retryKey]);
+    }, [platform, videoId, startTime, autoplay, retryKey]);
 
     const asyncLoading = !ready && !degraded && Boolean(videoId);
 
     const watchUrl =
       videoUrl ||
       (videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined);
+
+    const tweetUrl =
+      videoUrl || (videoId ? `https://x.com/i/status/${videoId}` : undefined);
 
     const retry = () => {
       ytApiPromise = null;
@@ -253,16 +256,51 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             </div>
           )
         ) : platform === "x" && videoId ? (
-          <div className="w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
-            <iframe
-              src={getTweetEmbedUrl(videoId)}
-              onLoad={() => setReady(true)}
-              className="w-full min-h-64 border-0"
-              title="Tweet embed"
-              allow="autoplay; encrypted-media"
-              loading="lazy"
-            />
-          </div>
+          degraded ? (
+            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-4 dark:border-neutral-800 dark:bg-neutral-900">
+              {tweetUrl && (
+                <a
+                  href={tweetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open on X
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={retry}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Retry
+              </button>
+            </div>
+          ) : (
+            <div className="w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+              <iframe
+                key={retryKey}
+                src={getTweetEmbedUrl(videoId)}
+                onLoad={() => setReady(true)}
+                className="w-full min-h-64 border-0"
+                title="Tweet embed"
+                allow="autoplay; encrypted-media"
+              />
+              {tweetUrl && (
+                <a
+                  href={tweetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border-t border-neutral-200 px-4 py-2 text-sm font-medium text-sky-600 transition hover:text-sky-700 dark:border-neutral-800 dark:text-sky-400 dark:hover:text-sky-300"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open on X
+                </a>
+              )}
+            </div>
+          )
         ) : (
           <a
             href={videoUrl}
