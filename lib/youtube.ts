@@ -73,7 +73,7 @@ export function getYouTubeEmbedUrl(videoId: string, autoplay = false): string {
 }
 
 export function getTweetEmbedUrl(tweetId: string): string {
-  return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
+  return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}&dnt=true`;
 }
 
 export function parseTimestampToSeconds(input: string): number {
