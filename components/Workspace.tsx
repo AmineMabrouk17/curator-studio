@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Globe,
   Loader2,
-  Sparkles,
   X,
 } from "lucide-react";
 import type { StudyDto } from "@/lib/types";
@@ -192,16 +191,6 @@ export default function Workspace({ study }: WorkspaceProps) {
           />
 
           <div className="flex flex-wrap items-center gap-2">
-            {canSeek && (
-              <button
-                type="button"
-                onClick={captureTimestamp}
-                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
-              >
-                <Sparkles className="h-4 w-4" />
-                Capture Timestamp
-              </button>
-            )}
             <a
               href="https://aistudio.google.com"
               target="_blank"
