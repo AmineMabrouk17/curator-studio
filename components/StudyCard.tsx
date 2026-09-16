@@ -10,11 +10,13 @@ import {
   Link2,
   Pencil,
   Trash2,
+  X,
 } from "lucide-react";
 import type { Platform } from "@/lib/youtube";
 import type { StudyDto } from "@/lib/types";
 import { XBrandIcon, YouTubeIcon } from "./brand-icons";
 import { cn } from "@/lib/cn";
+import { copyText } from "@/lib/copy";
 import { formatDate } from "@/lib/utils";
 
 function PlatformBadge({ platform }: { platform: Platform }) {
@@ -37,11 +39,14 @@ interface StudyCardProps {
   onDeleted?: () => void;
 }
 
+type CopyState = "idle" | "copied" | "failed";
+
 export default function StudyCard({ study, onDeleted }: StudyCardProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
   const [deleting, setDeleting] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (imgRef.current?.complete) setImgLoaded(true);
@@ -53,9 +58,10 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
       : `/share/${study.slug}`;
 
   const copyShareLink = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const ok = await copyText(shareUrl);
+    setCopyState(ok ? "copied" : "failed");
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => setCopyState("idle"), 1500);
   };
 
   const deleteStudy = async () => {
@@ -149,13 +155,36 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
             </Link>
             <button
               type="button"
-              aria-label="Copy share link"
+              aria-live="polite"
+              aria-label={
+                copyState === "copied"
+                  ? "Copied!"
+                  : copyState === "failed"
+                    ? "Failed to copy"
+                    : "Copy share link"
+              }
               title={study.isPublic ? "Copy share link" : "Publish to get a share link"}
               disabled={!study.isPublic}
               onClick={copyShareLink}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 transition enabled:hover:bg-neutral-100 enabled:hover:text-neutral-700 disabled:opacity-40 dark:enabled:hover:bg-neutral-800 dark:enabled:hover:text-neutral-200"
+              className={cn(
+                "flex h-8 items-center justify-center gap-1 rounded-md transition enabled:hover:bg-neutral-100 enabled:hover:text-neutral-700 disabled:opacity-40 dark:enabled:hover:bg-neutral-800 dark:enabled:hover:text-neutral-200",
+                copyState === "idle" && "px-1 text-neutral-400",
+                copyState === "copied" && "text-emerald-600 dark:text-emerald-400",
+                copyState === "failed" && "text-red-600 dark:text-red-400",
+              )}
             >
-              {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+              {copyState === "copied" ? (
+                <Check className="h-4 w-4" />
+              ) : copyState === "failed" ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              {copyState !== "idle" && (
+                <span className="text-xs font-medium">
+                  {copyState === "copied" ? "Copied!" : "Failed to copy"}
+                </span>
+              )}
             </button>
             <button
               type="button"
