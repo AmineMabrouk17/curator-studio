@@ -10,10 +10,12 @@ import {
   Globe,
   Loader2,
   Sparkles,
+  X,
 } from "lucide-react";
 import type { StudyDto } from "@/lib/types";
 import { formatTimestamp } from "@/lib/youtube";
 import { cn } from "@/lib/cn";
+import { copyText } from "@/lib/copy";
 import VideoPlayer, { type VideoPlayerHandle } from "./VideoPlayer";
 import MarkdownEditor, { type MarkdownEditorHandle } from "./MarkdownEditor";
 import MarkdownRenderer from "./MarkdownRenderer";
@@ -21,6 +23,7 @@ import TagInput from "./TagInput";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type ViewMode = "edit" | "split" | "preview";
+type CopyState = "idle" | "copied" | "failed";
 
 interface WorkspaceProps {
   study: StudyDto;
@@ -32,7 +35,7 @@ export default function Workspace({ study }: WorkspaceProps) {
   const [tags, setTags] = useState(study.tags);
   const [isPublic, setIsPublic] = useState(study.isPublic);
   const [status, setStatus] = useState<SaveStatus>("idle");
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
   const [view, setView] = useState<ViewMode>("split");
   const [degraded, setDegraded] = useState(false);
 
@@ -40,6 +43,7 @@ export default function Workspace({ study }: WorkspaceProps) {
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const firstRun = useRef(true);
   const latestDraft = useRef({ title, content, tags, isPublic });
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     latestDraft.current = { title, content, tags, isPublic };
@@ -89,9 +93,10 @@ export default function Workspace({ study }: WorkspaceProps) {
   };
 
   const copyShareLink = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const ok = await copyText(shareUrl);
+    setCopyState(ok ? "copied" : "failed");
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => setCopyState("idle"), 1500);
   };
 
   return (
@@ -149,17 +154,29 @@ export default function Workspace({ study }: WorkspaceProps) {
 
         <button
           type="button"
+          aria-live="polite"
           disabled={!isPublic}
           onClick={copyShareLink}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition",
-            isPublic
-              ? "bg-rose-600 text-white hover:bg-rose-700"
-              : "bg-neutral-100 text-neutral-400 dark:bg-neutral-800",
+            !isPublic && "bg-neutral-100 text-neutral-400 dark:bg-neutral-800",
+            isPublic && copyState === "idle" && "bg-rose-600 text-white hover:bg-rose-700",
+            copyState === "copied" && "bg-emerald-600 text-white hover:bg-emerald-700",
+            copyState === "failed" && "bg-red-600 text-white hover:bg-red-700",
           )}
         >
-          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? "Copied!" : "Copy Share Link"}
+          {copyState === "copied" ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : copyState === "failed" ? (
+            <X className="h-3.5 w-3.5" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+          {copyState === "copied"
+            ? "Copied!"
+            : copyState === "failed"
+              ? "Failed to copy"
+              : "Copy Share Link"}
         </button>
       </div>
 
