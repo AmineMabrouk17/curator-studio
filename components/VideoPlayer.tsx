@@ -34,7 +34,7 @@ interface YouTubeApi {
     options: {
       videoId: string;
       playerVars: Record<string, number>;
-      events: { onReady: () => void };
+      events: { onReady: () => void; onError?: () => void };
     },
   ) => YouTubePlayer;
 }
@@ -144,24 +144,31 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (cancelled || !containerRef.current) return;
         const YT = window.YT;
         if (!YT) return;
-        player = new YT.Player(containerRef.current, {
-          videoId,
-          playerVars: {
-            rel: 0,
-            playsinline: 1,
-            autoplay: autoplay ? 1 : 0,
-          },
-          events: {
-            onReady: () => {
-              playerRef.current = player;
-              setReady(true);
-              setDegraded(false);
-              if (startTime && player?.seekTo) {
-                player.seekTo(startTime, true);
-              }
+        try {
+          player = new YT.Player(containerRef.current, {
+            videoId,
+            playerVars: {
+              rel: 0,
+              playsinline: 1,
+              autoplay: autoplay ? 1 : 0,
             },
-          },
-        });
+            events: {
+              onReady: () => {
+                playerRef.current = player;
+                setReady(true);
+                setDegraded(false);
+                if (startTime && player?.seekTo) {
+                  player.seekTo(startTime, true);
+                }
+              },
+              onError: () => {
+                if (!cancelled) setDegraded(true);
+              },
+            },
+          });
+        } catch {
+          if (!cancelled) setDegraded(true);
+        }
       });
 
       return () => {
@@ -182,6 +189,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       (videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined);
 
     const retry = () => {
+      ytApiPromise = null;
+      document.getElementById("yt-iframe-api")?.remove();
       setDegraded(false);
       setRetryKey((k) => k + 1);
     };
