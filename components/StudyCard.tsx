@@ -45,12 +45,21 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const [deleting, setDeleting] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (imgRef.current?.complete) setImgLoaded(true);
-  }, []);
+    if (!study.thumbnailUrl) return;
+
+    // Preload image so imgLoaded triggers even if Skeleton holds back children
+    const img = new window.Image();
+    img.src = study.thumbnailUrl;
+    if (img.complete) {
+      setImgLoaded(true);
+    } else {
+      img.onload = () => setImgLoaded(true);
+      img.onerror = () => setImgLoaded(true); // Don't hang forever on broken image
+    }
+  }, [study.thumbnailUrl]);
 
   const shareUrl =
     typeof window !== "undefined"
@@ -90,7 +99,6 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              ref={imgRef}
               src={study.thumbnailUrl}
               alt=""
               loading="lazy"
