@@ -8,8 +8,7 @@ export const metadata: Metadata = {
     default: "CuratorStudio",
     template: "%s · CuratorStudio",
   },
-  description:
-    "A personal video knowledge studio and digital library.",
+  description: "A personal video knowledge studio and digital library.",
   icons: {
     icon: "/brand/favicon-32.png",
     shortcut: "/brand/favicon-32.png",
@@ -23,19 +22,27 @@ export const metadata: Metadata = {
 };
 
 const themeScript = `
-try {
-  var t = localStorage.getItem('theme');
-  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.classList.add('dark');
-  }
-} catch (e) {}
+(function() {
+  try {
+    var t = localStorage.getItem('theme');
+    var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch (e) {}
+})();
 `;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          id="theme-script"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
       </head>
       <body className="flex min-h-full flex-col bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
