@@ -35,14 +35,14 @@ export default function Dashboard({
 }: DashboardProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
-  const firstRun = useRef(true);
+  const prevQuery = useRef(initialQuery);
   const [isPending, startTransition] = useTransition();
 
+  // Only debounce navigation when the search query actually changes
   useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-      return;
-    }
+    if (prevQuery.current === query) return;
+    prevQuery.current = query;
+
     const timer = setTimeout(() => {
       const params = new URLSearchParams();
       if (query) params.set("q", query);
@@ -53,6 +53,7 @@ export default function Dashboard({
         router.replace(qs ? `/dashboard?${qs}` : "/dashboard");
       });
     }, 350);
+
     return () => clearTimeout(timer);
   }, [query, initialTag, initialPlatform, router]);
 
@@ -68,8 +69,11 @@ export default function Dashboard({
     });
   };
 
-  const clearFilters = () =>
+  const clearFilters = () => {
+    setQuery("");
+    prevQuery.current = "";
     startTransition(() => router.push("/dashboard"));
+  };
 
   const hasFilters = Boolean(initialQuery || initialTag || initialPlatform);
 
@@ -105,7 +109,17 @@ export default function Dashboard({
           {query && (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                prevQuery.current = "";
+                const params = new URLSearchParams();
+                if (initialTag) params.set("tag", initialTag);
+                if (initialPlatform) params.set("platform", initialPlatform);
+                const qs = params.toString();
+                startTransition(() => {
+                  router.replace(qs ? `/dashboard?${qs}` : "/dashboard");
+                });
+              }}
               aria-label="Clear search"
               className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 transition hover:text-neutral-700 dark:hover:text-neutral-200"
             >
@@ -158,58 +172,65 @@ export default function Dashboard({
         </button>
       )}
 
-      <Skeleton
-        name="dashboard-grid"
-        loading={isPending}
-        className="mt-6"
-        fallback={<DashboardSkeletonCards />}
-        fixture={<DashboardSkeletonCards />}
-      >
-        {studies.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 pt-10 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-900">
-            <Image
-              src="/brand/mark-black.png"
-              alt=""
-              width={106}
-              height={152}
-              unoptimized
-              className="h-7 w-auto dark:hidden"
-            />
-            <Image
-              src="/brand/mark-white-on-dark.png"
-              alt=""
-              width={173}
-              height={168}
-              unoptimized
-              className="hidden h-8 w-auto rounded-xl dark:block"
-            />
-          </span>
-            <p className="font-medium text-neutral-700 dark:text-neutral-300">
-              {hasFilters ? "No studies match your filters" : "No studies yet"}
-            </p>
-            {!hasFilters && (
-              <Link
-                href="/study/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
-              >
-                <Plus className="h-4 w-4" />
-                Create your first study
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {studies.map((study) => (
-              <StudyCard
-                key={study.id}
-                study={study}
-                onDeleted={() => router.refresh()}
-              />
-            ))}
-          </div>
+      <div
+        className={cn(
+          "mt-6 transition-opacity duration-200",
+          isPending && "opacity-50 pointer-events-none",
         )}
-      </Skeleton>
+      >
+        <Skeleton
+          name="dashboard-grid"
+          loading={false}
+          className="w-full"
+          fallback={<DashboardSkeletonCards />}
+          fixture={<DashboardSkeletonCards />}
+        >
+          {studies.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 pt-10 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-900">
+                <Image
+                  src="/brand/mark-black.png"
+                  alt=""
+                  width={106}
+                  height={152}
+                  unoptimized
+                  className="h-7 w-auto dark:hidden"
+                />
+                <Image
+                  src="/brand/mark-white-on-dark.png"
+                  alt=""
+                  width={173}
+                  height={168}
+                  unoptimized
+                  className="hidden h-8 w-auto rounded-xl dark:block"
+                />
+              </span>
+              <p className="font-medium text-neutral-700 dark:text-neutral-300">
+                {hasFilters ? "No studies match your filters" : "No studies yet"}
+              </p>
+              {!hasFilters && (
+                <Link
+                  href="/study/new"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create your first study
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {studies.map((study) => (
+                <StudyCard
+                  key={study.id}
+                  study={study}
+                  onDeleted={() => router.refresh()}
+                />
+              ))}
+            </div>
+          )}
+        </Skeleton>
+      </div>
     </main>
   );
 }
