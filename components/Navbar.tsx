@@ -45,10 +45,10 @@ export default function Navbar() {
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6">
         <Link href="/dashboard" className="flex items-center" aria-label="CuratorStudio home">
           <Image
-            src="/brand/logo-dark-full.png"
+            src="/brand/logo-dark-full.jpg"
             alt="CuratorStudio"
-            width={905}
-            height={212}
+            width={1024}
+            height={1024}
             priority
             unoptimized
             className="h-8 w-auto dark:hidden"
