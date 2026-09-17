@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ExternalLink, Link2, RotateCcw } from "lucide-react";
+import { ExternalLink, Link2, Loader2, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "boneyard-js/react";
 import { getTweetEmbedUrl, type Platform } from "@/lib/youtube";
@@ -49,6 +49,7 @@ declare global {
 let ytApiPromise: Promise<void> | null = null;
 
 function loadYouTubeApi(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
   if (window.YT?.Player) return Promise.resolve();
   if (ytApiPromise) return ytApiPromise;
   ytApiPromise = new Promise((resolve) => {
@@ -182,8 +183,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       };
     }, [platform, videoId, startTime, autoplay, retryKey]);
 
-    const asyncLoading = !ready && !degraded && Boolean(videoId);
-
     const watchUrl =
       videoUrl ||
       (videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined);
@@ -195,19 +194,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       ytApiPromise = null;
       document.getElementById("yt-iframe-api")?.remove();
       setDegraded(false);
+      setReady(false);
       setRetryKey((k) => k + 1);
     };
 
-    const linkOutBox = (
-      retryButton: boolean,
-      className?: string,
-    ) => (
-      <div
-        className={
-          className ??
-          "flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-4 dark:border-neutral-800 dark:bg-neutral-900"
-        }
-      >
+    const linkOutBox = (retryButton: boolean) => (
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-4 dark:border-neutral-800 dark:bg-neutral-900">
         {tweetUrl && (
           <a
             href={tweetUrl}
@@ -270,14 +262,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       </div>
     );
 
-    const fallbackContent =
-      platform === "youtube" ? ytThumbBox(false) : linkOutBox(false);
-
     return (
       <Skeleton
         name="video-player"
-        loading={asyncLoading}
-        fallback={fallbackContent}
+        loading={false}
+        fallback={
+          <div className="aspect-video w-full rounded-xl bg-neutral-200 dark:bg-neutral-800" />
+        }
         fixture={
           <div className="aspect-video w-full rounded-xl bg-neutral-200 dark:bg-neutral-800" />
         }
@@ -288,21 +279,33 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           ) : (
             <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
               <div ref={containerRef} className="absolute inset-0 h-full w-full" />
+              {!ready && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 text-white">
+                  <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                  <span className="text-xs text-neutral-400">Loading YouTube player…</span>
+                </div>
+              )}
             </div>
           )
         ) : platform === "x" && videoId ? (
           degraded ? (
             linkOutBox(true)
           ) : (
-            <div className="w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+            <div className="relative w-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
               <iframe
                 key={retryKey}
                 src={getTweetEmbedUrl(videoId)}
                 onLoad={() => setReady(true)}
-                className="w-full min-h-64 border-0"
+                className="w-full min-h-80 border-0"
                 title="Tweet embed"
                 allow="autoplay; encrypted-media"
               />
+              {!ready && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100 dark:bg-neutral-900">
+                  <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                  <span className="text-xs text-neutral-400">Loading X embed…</span>
+                </div>
+              )}
               {tweetUrl && (
                 <a
                   href={tweetUrl}
