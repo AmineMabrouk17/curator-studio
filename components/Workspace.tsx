@@ -44,6 +44,18 @@ export default function Workspace({ study }: WorkspaceProps) {
   const latestDraft = useRef({ title, content, tags, isPublic });
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [copiedVideoUrl, setCopiedVideoUrl] = useState(false);
+  const videoUrlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopyVideoUrl = async () => {
+    const ok = await copyText(study.videoUrl);
+    if (ok) {
+      setCopiedVideoUrl(true);
+      if (videoUrlTimer.current) clearTimeout(videoUrlTimer.current);
+      videoUrlTimer.current = setTimeout(() => setCopiedVideoUrl(false), 1500);
+    }
+  };
+  
   useEffect(() => {
     latestDraft.current = { title, content, tags, isPublic };
   });
@@ -202,11 +214,20 @@ export default function Workspace({ study }: WorkspaceProps) {
             </a>
             <button
               type="button"
-              onClick={() => navigator.clipboard.writeText(study.videoUrl)}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              onClick={handleCopyVideoUrl}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition",
+                copiedVideoUrl
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300"
+                  : "border-neutral-300 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800",
+              )}
             >
-              <Copy className="h-4 w-4" />
-              Copy Video URL
+              {copiedVideoUrl ? (
+                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <span>{copiedVideoUrl ? "Copied!" : "Copy Video URL"}</span>
             </button>
           </div>
 
