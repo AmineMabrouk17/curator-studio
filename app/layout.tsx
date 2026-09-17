@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CuratorStudio",
     description: "A personal video knowledge studio and digital library.",
-    images: ["/brand/logo-light-panel.png"],
+    images: ["/brand/logo-light-panel.jpg"],
   },
 };
 

@@ -41,10 +41,10 @@ export default function LoginForm() {
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col items-center gap-3 text-center">
         <Image
-          src="/brand/logo-light-panel.png"
+          src="/brand/logo-light-panel.jpg"
           alt="CuratorStudio"
-          width={768}
-          height={303}
+          width={1024}
+          height={1024}
           priority
           unoptimized
           className="h-16 w-auto dark:hidden"
