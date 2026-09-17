@@ -3,7 +3,7 @@ import { and, desc, eq, like, or } from "drizzle-orm";
 import { getDb, schema } from "@/db/index";
 import { readSession } from "@/lib/auth";
 import { generateId, slugify, stringifyTags } from "@/lib/utils";
-import { parseVideo } from "@/lib/youtube";
+import { parseVideo, getTweetThumbnail } from "@/lib/youtube";
 import { serializeStudy } from "@/lib/studies";
 
 export const runtime = "nodejs";
@@ -69,6 +69,11 @@ export async function POST(request: Request) {
   const tags = stringifyTags(body.tags ?? []);
   const parsed = parseVideo(videoUrl);
 
+  let thumbnailUrl = parsed.thumbnailUrl;
+  if (!thumbnailUrl && parsed.platform === "x" && parsed.videoId) {
+    thumbnailUrl = await getTweetThumbnail(parsed.videoId);
+  }
+
   const baseSlug = slugify(title);
   let slug = baseSlug;
   let suffix = 2;
@@ -91,7 +96,7 @@ export async function POST(request: Request) {
     videoUrl,
     platform: parsed.platform,
     videoId: parsed.videoId,
-    thumbnailUrl: parsed.thumbnailUrl,
+    thumbnailUrl,
     content: "",
     tags,
     isPublic: false,

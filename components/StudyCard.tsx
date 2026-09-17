@@ -41,25 +41,53 @@ interface StudyCardProps {
 
 type CopyState = "idle" | "copied" | "failed";
 
+interface FxTwitterResponse {
+  tweet?: {
+    media?: {
+      videos?: Array<{ thumbnail_url?: string }>;
+      photos?: Array<{ url?: string }>;
+    };
+  };
+}
+
 export default function StudyCard({ study, onDeleted }: StudyCardProps) {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const [deleting, setDeleting] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(study.thumbnailUrl);
   const [imgLoaded, setImgLoaded] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // If X study has no stored thumbnail, dynamically fetch it via tweetId
   useEffect(() => {
-    if (!study.thumbnailUrl) return;
-
-    // Preload image so imgLoaded triggers even if Skeleton holds back children
-    const img = new window.Image();
-    img.src = study.thumbnailUrl;
-    if (img.complete) {
-      setImgLoaded(true);
-    } else {
-      img.onload = () => setImgLoaded(true);
-      img.onerror = () => setImgLoaded(true); // Don't hang forever on broken image
+    if (thumbnailUrl) return;
+    if (study.platform === "x" && study.videoId) {
+      fetch(`https://api.fxtwitter.com/status/${study.videoId}`)
+        .then((res) =>
+          res.ok
+            ? (res.json() as Promise<FxTwitterResponse>)
+            : Promise.resolve(null),
+        )
+        .then((data) => {
+          const media = data?.tweet?.media;
+          const found = media?.videos?.[0]?.thumbnail_url || media?.photos?.[0]?.url;
+          if (found) setThumbnailUrl(found);
+        })
+        .catch(() => {});
     }
-  }, [study.thumbnailUrl]);
+  }, [study.platform, study.videoId, thumbnailUrl]);
+
+  useEffect(() => {
+    if (!thumbnailUrl) return;
+    const img = new window.Image();
+    img.src = thumbnailUrl;
+    const markLoaded = () => setImgLoaded(true);
+    if (img.complete) {
+      queueMicrotask(markLoaded);
+    } else {
+      img.onload = markLoaded;
+      img.onerror = markLoaded; // Don't hang forever on broken image
+    }
+  }, [thumbnailUrl]);
 
   const shareUrl =
     typeof window !== "undefined"
@@ -84,7 +112,7 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950">
       <Link href={`/study/${study.id}`} className="relative block aspect-video overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-        {study.thumbnailUrl ? (
+        {thumbnailUrl ? (
           <Skeleton
             name="study-card-thumbnail"
             loading={!imgLoaded}
@@ -94,12 +122,12 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
             }
             fixture={
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={study.thumbnailUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={thumbnailUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
             }
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={study.thumbnailUrl}
+              src={thumbnailUrl}
               alt=""
               loading="lazy"
               onLoad={() => setImgLoaded(true)}
@@ -207,7 +235,7 @@ export default function StudyCard({ study, onDeleted }: StudyCardProps) {
         </div>
       </div>
 
-      {study.thumbnailUrl && !study.isPublic && (
+      {thumbnailUrl && !study.isPublic && (
         <div className="sr-only">
           <ExternalLink className="h-4 w-4" />
           {shareUrl}
