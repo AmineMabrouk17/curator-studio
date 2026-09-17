@@ -1,0 +1,39 @@
+name: Deploy OpenNext to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build & Deploy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm' # Change to pnpm or yarn if you use them
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build Next.js and OpenNext output (.open-next folder)
+      - name: Build Project
+        run: npm run build
+        env:
+          # If you have public build-time env vars (like NEXT_PUBLIC_...), add them here:
+          NODE_ENV: production
+
+      # Deploy using wrangler
+      - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler.jsonc
