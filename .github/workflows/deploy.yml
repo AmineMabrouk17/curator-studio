@@ -18,22 +18,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm' # Change to pnpm or yarn if you use them
 
       - name: Install dependencies
         run: npm install
 
-      # Build Next.js and OpenNext output (.open-next folder)
-      - name: Build Project
-        run: npm run build
+      # 1. First build Next.js, then build the Cloudflare OpenNext worker
+      - name: Build OpenNext Worker
+        run: |
+          npm run build
+          npx @opennextjs/cloudflare
         env:
-          # If you have public build-time env vars (like NEXT_PUBLIC_...), add them here:
           NODE_ENV: production
 
-      # Deploy using wrangler
+      # 2. Deploy using the latest Wrangler
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "latest"
           command: deploy --config wrangler.jsonc
