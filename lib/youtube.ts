@@ -54,6 +54,27 @@ export function extractTweetId(url: string): string | null {
   return match ? match[1] : null;
 }
 
+export async function getTweetThumbnail(tweetId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://api.fxtwitter.com/status/${tweetId}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      tweet?: {
+        media?: {
+          videos?: Array<{ thumbnail_url?: string }>;
+          photos?: Array<{ url?: string }>;
+        };
+      };
+    };
+    const media = data?.tweet?.media;
+    return media?.videos?.[0]?.thumbnail_url ?? media?.photos?.[0]?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseYouTubeStartTime(url: string): number | undefined {
   const parsed = safeUrl(url);
   if (!parsed) return undefined;
