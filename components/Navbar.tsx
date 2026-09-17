@@ -1,30 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Moon, Sun } from "lucide-react";
-import { persistTheme } from "@/lib/theme";
+import { persistTheme, getThemePreference } from "@/lib/theme";
 
 function useTheme() {
-  const [dark, setDark] = useState(
-    () =>
-      typeof document !== "undefined" &&
-      document.documentElement.classList.contains("dark"),
-  );
+  const [mounted, setMounted] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const isDark = getThemePreference();
+    document.documentElement.classList.toggle("dark", isDark);
+    requestAnimationFrame(() => {
+      setDark(isDark);
+      setMounted(true);
+    });
+  }, []);
+
   const toggle = () => {
     const next = !dark;
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     persistTheme(next);
   };
-  return { dark, toggle };
+
+  return { dark, toggle, mounted };
 }
 
 export default function Navbar() {
   const router = useRouter();
-  const { dark, toggle } = useTheme();
+  const { dark, toggle, mounted } = useTheme();
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -63,7 +71,11 @@ export default function Navbar() {
             aria-label="Toggle theme"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
           >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {mounted ? (
+              dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />
+            ) : (
+              <div className="h-4 w-4" /> // Placeholder while mounting to avoid SSR mismatch
+            )}
           </button>
           <button
             type="button"
