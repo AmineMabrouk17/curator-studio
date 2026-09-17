@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState, type FormEvent, type ElementType } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ElementType } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "boneyard-js/react";
 import { ArrowRight, Link2 } from "lucide-react";
-import { detectPlatform, extractYouTubeId, getYouTubeThumbnail } from "@/lib/youtube";
+import { detectPlatform, extractYouTubeId, extractTweetId, getYouTubeThumbnail } from "@/lib/youtube";
 import { XBrandIcon, YouTubeIcon } from "./brand-icons";
 import TagInput from "./TagInput";
 import { cn } from "@/lib/cn";
@@ -24,6 +24,19 @@ function ThumbnailPreview({
 }) {
   const [loaded, setLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setLoaded(false);
+    const img = new window.Image();
+    img.src = thumbnail;
+    const markLoaded = () => setLoaded(true);
+    if (img.complete) {
+      markLoaded();
+    } else {
+      img.onload = markLoaded;
+      img.onerror = markLoaded; // Avoid staying stuck if image fails
+    }
+  }, [thumbnail]);
 
   return (
     <Skeleton
@@ -52,9 +65,7 @@ function ThumbnailPreview({
           ref={imgRef}
           src={thumbnail}
           alt=""
-          onLoad={() => {
-            if (imgRef.current?.complete) setLoaded(true);
-          }}
+          onLoad={() => setLoaded(true)}
           className="h-full w-1/2 object-cover"
         />
         <div className="min-w-0 flex-1">
@@ -80,10 +91,38 @@ export default function NewStudyForm() {
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [xThumbnail, setXThumbnail] = useState<string | null>(null);
 
-  const platform = useMemo(() => detectPlatform(videoUrl.trim()), [videoUrl]);
-  const youtubeId = useMemo(() => extractYouTubeId(videoUrl.trim()), [videoUrl]);
-  const thumbnail = youtubeId ? getYouTubeThumbnail(youtubeId) : null;
+  const trimmedUrl = videoUrl.trim();
+  const platform = useMemo(() => detectPlatform(trimmedUrl), [trimmedUrl]);
+  const youtubeId = useMemo(() => extractYouTubeId(trimmedUrl), [trimmedUrl]);
+  const tweetId = useMemo(() => extractTweetId(trimmedUrl), [trimmedUrl]);
+
+  // Dynamically fetch X thumbnail when an X URL is entered
+  useEffect(() => {
+    if (platform === "x" && tweetId) {
+      fetch(`https://api.fxtwitter.com/status/${tweetId}`)
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = (await res.json()) as {
+            tweet?: {
+              media?: {
+                videos?: Array<{ thumbnail_url?: string }>;
+                photos?: Array<{ url?: string }>;
+              };
+            };
+          };
+          const media = data?.tweet?.media;
+          const found = media?.videos?.[0]?.thumbnail_url || media?.photos?.[0]?.url;
+          if (found) setXThumbnail(found);
+        })
+        .catch(() => {});
+      return;
+    }
+    setXThumbnail(null);
+  }, [platform, tweetId]);
+
+  const thumbnail = youtubeId ? getYouTubeThumbnail(youtubeId) : xThumbnail;
 
   const platformLabel = {
     youtube: { label: "YouTube", icon: YouTubeIcon, classes: "text-red-600 dark:text-red-400" },
@@ -93,7 +132,7 @@ export default function NewStudyForm() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!videoUrl.trim()) {
+    if (!trimmedUrl) {
       setError("Paste a video URL to get started.");
       return;
     }
@@ -104,7 +143,7 @@ export default function NewStudyForm() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          videoUrl: videoUrl.trim(),
+          videoUrl: trimmedUrl,
           title: title.trim() || undefined,
           tags,
         }),
@@ -133,7 +172,7 @@ export default function NewStudyForm() {
         </p>
       </div>
 
-      {platform === "other" && videoUrl.trim() && !thumbnail && (
+      {platform === "other" && trimmedUrl && !thumbnail && (
         <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
           This looks like a generic video link. It will be saved as an open-link card
           — timestamps won&apos;t be interactive for it.
@@ -148,12 +187,12 @@ export default function NewStudyForm() {
           <input
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=… or https://x.com/…"
+            placeholder="https://youtube.com/watch?v=… or https://x.com/…"
             className="rounded-lg border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100"
           />
         </label>
 
-        {videoUrl.trim() &&
+        {trimmedUrl &&
           (thumbnail ? (
             <ThumbnailPreview key={thumbnail} thumbnail={thumbnail} platformLabel={platformLabel} />
           ) : (
@@ -200,7 +239,7 @@ export default function NewStudyForm() {
       <div className="mt-6 flex items-center gap-3">
         <button
           type="submit"
-          disabled={loading || !videoUrl.trim()}
+          disabled={loading || !trimmedUrl}
           className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
         >
           Create Study
